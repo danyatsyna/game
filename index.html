@@ -966,6 +966,7 @@ var SHEETS={
     '</form>'+
     '<h3>Свои трофеи</h3>'+(customs?'<ul class="log">'+customs+'</ul>':'<p class="empty">Добавь свой, например «Выступил на камеру без шпаргалки».</p>')+
     '<form data-form="custom" class="mt"><div class="field"><label for="c-name">Название</label><input id="c-name" name="cname" maxlength="40" autocomplete="off"></div><div class="field"><label for="c-desc">Условие</label><input id="c-desc" name="cdesc" maxlength="80" autocomplete="off"></div><div class="field"><label for="c-rar">Редкость</label><select id="c-rar" name="crar"><option value="common">Обычный</option><option value="rare" selected>Редкий</option><option value="epic">Эпический</option><option value="legend">Легендарный</option></select></div><button class="btn wide" type="submit">'+icon('plus',16)+'Добавить трофей</button></form>'+
+    '<h3>Подписчики</h3><div class="field"><label for="s-fol">Сколько сейчас подписчиков</label><input id="s-fol" inputmode="numeric" placeholder="'+(folNow()===null?'850':folNow())+'" maxlength="9"></div><button class="btn wide primary" data-act="fol-set">Записать число на сегодня</button>'+
     (S.demo?'<h3>Демо-данные</h3><p class="note">Сейчас показаны демо-данные, чтобы посмотреть, как всё работает.</p><button class="btn wide primary" data-act="start-fresh">Начать с нуля</button>':'')+
     '<h3>Демо на год</h3><p class="note">Заполнит приложение примером данных за 365 дней: видео, подписчики, навыки, ранги по сезонам.</p><button class="btn wide" data-act="demo-year" data-confirm="Заменить текущие данные демо за год?">Добавить демо-данные на 1 год</button>'+
     '<h3>Сброс</h3><button class="btn wide danger" data-act="reset" data-confirm="Точно стереть всё?">Стереть всё и начать заново</button>';
@@ -1020,6 +1021,9 @@ var H={
   'settings-custom':function(){openSheet('settings');var c=$('c-name');if(c)c.scrollIntoView({block:'center'});},
   branch:function(el){openSheet('branch',el.dataset.id);},
   ach:function(el){openSheet('ach',el.dataset.id);},
+  'fol-set':function(){var i=document.getElementById('s-fol'),n=parseInt((i&&i.value||'').replace(/\s/g,''),10);
+    if(!(n>=0)){toast('Впиши число подписчиков');return;}
+    mutate(function(){setFollowersToday(S,n);});toast('Записано: '+fmt(n));if(i)i.value='';},
   'fol-range':function(el){FOL_RANGE=+el.dataset.r;renderStats();},
   'add-video':function(){openSheet('video');},
   'add-result':function(){openSheet('result');},
