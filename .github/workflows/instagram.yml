@@ -16,6 +16,7 @@ jobs:
       - run: node tools/ig_followers.mjs
         env:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
       - run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
