@@ -6,5 +6,12 @@ hero = 'data:image/webp;base64,' + base64.b64encode((root / 'src/hero.webp').rea
 demo = (root / 'demo-data/demo-year.json').read_text(encoding='utf-8')
 assert s.count("var HERO_SRC='__HERO__';") == 1 and s.count('__DEMOYEAR__') == 1
 s = s.replace('__HERO__', hero).replace('__DEMOYEAR__', demo)
-(root / 'index.html').write_text(s, encoding='utf-8')
+# standalone page: the artifact host adds this skeleton itself, GitHub Pages needs it explicitly
+head = ('<!doctype html><html lang="ru"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+        '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
+        '<meta name="apple-mobile-web-app-title" content="Билд">'
+        '<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}'
+        'body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
+(root / 'index.html').write_text(head + s + '</body></html>', encoding='utf-8')
 print('built index.html', len(s) // 1024, 'KB')
