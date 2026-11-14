@@ -1097,5 +1097,17 @@ var ended=null;
 if(S.season.key<curKey()){ended=prevKey(curKey());S.season={key:curKey()};if(S.demo||ended<S.since)ended=null;}
 checkAch(true);save();render();
 if(ended)openSheet('seasonEnd',ended);
+/* Instagram sync: data/followers.json is written by a scheduled GitHub Action */
+function syncFollowers(){
+  if(S.demo||typeof fetch!=='function')return;
+  fetch('data/followers.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(arr){
+    if(!arr||!arr.length)return;var changed=false;
+    arr.forEach(function(p){if(!p||!/^\d{4}-\d\d-\d\d$/.test(p.date)||typeof p.count!=='number')return;
+      var ex=S.followers.filter(function(x){return x.date===p.date;})[0];
+      if(!ex){S.followers.push({id:uid(),date:p.date,count:p.count});changed=true;}else if(ex.count!==p.count){ex.count=p.count;changed=true;}});
+    if(changed){save();render();}
+  }).catch(function(){});
+}
+syncFollowers();
 })();
 </script>
