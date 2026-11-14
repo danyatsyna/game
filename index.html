@@ -460,7 +460,7 @@ function defaultSettings(){return{
   xp:{course:40,method:15,exercise:10,book:60,consult:25,workout:20,task:15},
   currency:'₴'
 };}
-function freshState(){var k=curKey();return{v:2,demo:false,profile:{name:'Даниил',hero:null},settings:defaultSettings(),since:k,season:{key:k},videos:[],results:[],skills:[],tasks:[],followers:[],ach:{},custom:[]};}
+function freshState(){var k=curKey();return{v:2,demo:false,profile:{name:'Даниил',hero:null},settings:defaultSettings(),since:k,season:{key:k},videos:[],results:[],skills:[],tasks:[],followers:[],ach:{},custom:[],igDel:[]};}
 
 var ACH=[
   {id:'first',name:'Первая кровь',desc:'Опубликовать первое видео',r:'common',icon:'play',ok:function(s){return s.videosTotal>=1;}},
@@ -506,7 +506,7 @@ function normalize(d){
     currency:st.currency||(st.rating&&st.rating.currency)||'₴'
   };
   s.profile=Object.assign({name:'Даниил',hero:null},d.profile||{});delete s.profile.photo;
-  ['videos','results','skills','tasks','followers','custom'].forEach(function(k){if(!Array.isArray(s[k]))s[k]=[];});
+  ['videos','results','skills','tasks','followers','custom','igDel'].forEach(function(k){if(!Array.isArray(s[k]))s[k]=[];});
   if(!s.ach||typeof s.ach!=='object')s.ach={};
   if(!isKey(s.since))s.since=curKey();
   if(!s.season||!isKey(s.season.key))s.season={key:curKey()};
@@ -1036,12 +1036,12 @@ var H={
   'add-video':function(){openSheet('video');},
   'add-result':function(){openSheet('result');},
   pick:function(el){if(!cur)return;cur.pick=el.dataset.id;refreshSheet();var i=$('sk-title');if(i)try{i.focus({preventScroll:true});}catch(e){}},
-  del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];});toast('Удалено');},
+  del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];if(k==='videos'&&/^ig_/.test(id)&&S.igDel.indexOf(id)<0)S.igDel.push(id);});toast('Удалено');},
   'custom-unlock':function(el){var a=S.custom.filter(function(c){return c.id===el.dataset.id;})[0];if(!a)return;mutate(function(){S.ach[a.id]=todayStr();});queuePopup({kind:'ach',a:Object.assign({icon:'star'},a)});},
   'photo-remove':function(){S.profile.hero=null;save();render();toast('Исходный персонаж возвращён');},
   'demo-year':function(){S=demoYearState();save();closeSheet();render();toast('Демо за год загружено');},
   reset:function(){S=freshState();save();closeSheet();render();toast('Всё стёрто. Сезон «'+monthName(curKey())+'» начался');},
-  'start-fresh':function(){closeSheet();S=freshState();save();render();syncFollowers();toast('Сезон «'+monthName(curKey())+'» начался');},
+  'start-fresh':function(){closeSheet();S=freshState();save();render();syncIG(true);toast('Сезон «'+monthName(curKey())+'» начался');},
   'pop-ok':function(){nextPopup();}
 };
 var F={
@@ -1109,18 +1109,41 @@ var ended=null;
 if(S.season.key<curKey()){ended=prevKey(curKey());S.season={key:curKey()};if(S.demo||ended<S.since)ended=null;}
 checkAch(true);save();render();
 if(ended)openSheet('seasonEnd',ended);
-/* Instagram sync: data/followers.json is written by a scheduled GitHub Action */
-function syncFollowers(){
-  if(S.demo||typeof fetch!=='function')return;
-  fetch('data/followers.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(arr){
-    if(!arr||!arr.length)return;var changed=false;
-    arr.forEach(function(p){if(!p||!/^\d{4}-\d\d-\d\d$/.test(p.date)||typeof p.count!=='number')return;
-      var ex=S.followers.filter(function(x){return x.date===p.date;})[0];
-      if(!ex){S.followers.push({id:uid(),date:p.date,count:p.count});changed=true;}else if(ex.count!==p.count){ex.count=p.count;changed=true;}});
-    if(changed){save();render();}
-  }).catch(function(){});
+/* Instagram sync: data/followers.json and data/videos.json are written by a scheduled GitHub Action */
+var igLast=0;
+function igGet(name){return fetch('data/'+name+'.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(a){return Array.isArray(a)?a:[];}).catch(function(){return [];});}
+function igMergeFollowers(arr){
+  var changed=false;
+  arr.forEach(function(p){if(!p||!/^\d{4}-\d\d-\d\d$/.test(p.date)||typeof p.count!=='number')return;
+    var ex=S.followers.filter(function(x){return x.date===p.date;})[0];
+    if(!ex){S.followers.push({id:uid(),date:p.date,count:p.count});changed=true;}else if(ex.count!==p.count){ex.count=p.count;changed=true;}});
+  return changed;
 }
-syncFollowers();
+function igMergeVideos(arr){
+  var have={},gone=S.igDel||[],td=dayNum(todayStr()),old=[],fresh=[];
+  S.videos.forEach(function(v){have[v.id]=1;});
+  arr.forEach(function(p){
+    if(!p||!p.id||!/^\d{4}-\d\d-\d\d$/.test(p.date)||p.date>todayStr())return;
+    var id='ig_'+p.id;if(have[id]||gone.indexOf(id)>=0)return;have[id]=1;
+    (td-dayNum(p.date)>2?old:fresh).push({id:id,date:p.date,title:String(p.title||'').slice(0,120)});});
+  /* older posts are imported quietly; new ones go through mutate() so rank-ups and trophies pop up */
+  old.forEach(function(v){S.videos.push(v);});
+  if(old.length)checkAch(true);
+  if(fresh.length){mutate(function(){fresh.forEach(function(v){S.videos.push(v);});});}
+  else if(old.length){save();render();}
+}
+function syncIG(force){
+  if(S.demo||typeof fetch!=='function')return;
+  var now=Date.now();if(!force&&now-igLast<60000)return;igLast=now;
+  Promise.all([igGet('followers'),igGet('videos')]).then(function(r){
+    if(S.demo)return;
+    if(r[0].length&&igMergeFollowers(r[0])){save();render();}
+    if(r[1].length)igMergeVideos(r[1]);
+  });
+}
+syncIG(true);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')syncIG();});
+window.addEventListener('pageshow',function(){syncIG();});
 })();
 </script>
 </body></html>
