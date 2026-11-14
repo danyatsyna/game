@@ -818,9 +818,9 @@ function followersCard(){
   var sw='<div class="seg" role="group" aria-label="Период">'+[[30,'30д'],[90,'90д'],[365,'1г'],[0,'Все']].map(function(o){return '<button type="button" class="'+(rg===o[0]?'on':'')+'" data-act="fol-range" data-r="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>';
   var hd='<h3 class="card-title">Подписчики</h3>';
   var btn='',list='';
-  if(!pts.length)return '<section class="card dk" id="sec-fol">'+hd+'<p class="empty mt">Впиши текущее число подписчиков в «Результате», и с этого дня начнётся график роста.</p>'+btn+'</section>';
+  if(!pts.length)return '<section class="card dk" id="sec-fol">'+hd+'<p class="empty mt">Число подписчиков подтянется из Instagram автоматически, раз в день.</p>'+btn+'</section>';
   var first=pts[0],last=pts[pts.length-1],diff=last.count-first.count;
-  var top='<div class="fol-head"><span class="fol-num">'+fmt(last.count)+'</span><span class="delta '+(diff>0?'up':diff<0?'down':'flat')+'">'+signed(diff)+' <small>с '+fmtDate(first.date)+'</small></span></div>';
+  var top='<div class="fol-head"><span class="fol-num">'+fmt(last.count)+'</span>'+(pts.length>1?'<span class="delta '+(diff>0?'up':diff<0?'down':'flat')+'">'+signed(diff)+' <small>с '+fmtDate(first.date)+'</small></span>':'')+'</div>';
   if(pts.length<2)return '<section class="card dk" id="sec-fol">'+hd+top+'<p class="empty">Старт отслеживания. Линия появится со второй записи.</p>'+btn+list+'</section>';
   var W=320,H=168,L=40,R=10,T=14,B=138;
   var d0=dayNum(first.date),d1=Math.max(dayNum(todayStr()),dayNum(last.date)),span=Math.max(1,d1-d0);
@@ -1041,7 +1041,7 @@ var H={
   'photo-remove':function(){S.profile.hero=null;save();render();toast('Исходный персонаж возвращён');},
   'demo-year':function(){S=demoYearState();save();closeSheet();render();toast('Демо за год загружено');},
   reset:function(){S=freshState();save();closeSheet();render();toast('Всё стёрто. Сезон «'+monthName(curKey())+'» начался');},
-  'start-fresh':function(){closeSheet();S=freshState();setFollowersToday(S,FOLLOWERS_NOW);save();render();toast('Сезон «'+monthName(curKey())+'» начался');},
+  'start-fresh':function(){closeSheet();S=freshState();save();render();syncFollowers();toast('Сезон «'+monthName(curKey())+'» начался');},
   'pop-ok':function(){nextPopup();}
 };
 var F={
