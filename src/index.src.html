@@ -691,11 +691,6 @@ function renderStage(){
   var im=els.stage.querySelector('.hero img');
   if(im)im.addEventListener('error',function(){var h=els.stage.querySelector('.hero');if(h)h.innerHTML=silhouette();});
 }
-function renderActions(){
-  var today=todayStr(),has=S.videos.some(function(v){return v.date===today;}),st=curStreak();
-  els.actions.innerHTML='<div class="act-row"><button class="btn primary" data-act="add-video">'+icon('plus',18)+'Видео</button><button class="btn" data-act="add-result">'+icon('plus',18)+'Результат</button></div>'+
-    '<div class="act-meta"><span class="'+(st?'lit':'')+'">'+icon('flame',15)+'Серия: <b>'+st+' '+plural(st,['день','дня','дней'])+'</b></span><span>'+(has?icon('check',15)+'Сегодня видео есть':'Сегодня видео ещё нет')+'</span></div>';
-}
 
 /* ---------- tabs ---------- */
 var TABS=[{id:'hero',name:'Герой',icon:'user'},{id:'tasks',name:'Задачи',icon:'list'},{id:'season',name:'Сезон',icon:'shield'},{id:'stats',name:'Аналитика',icon:'chart'},{id:'trophies',name:'Трофеи',icon:'trophy'}];
@@ -759,7 +754,7 @@ function renderSeason(){
   var rlist=res.length?'<ul class="log">'+res.map(function(r){var lab=[r.views?fmt(r.views)+' просм.':'',r.money?fmt(r.money)+' '+cu:''].filter(Boolean).join(' · ');return logRow('results',r,lab,r.note||'','');}).join('')+'</ul>':'<p class="empty">Просмотров и заказов за месяц пока нет.</p>';
   var hist=pastSeasons().reverse();
   var hl=hist.length?'<ul class="log">'+hist.map(function(h){return '<li><span class="d">'+emblem(h.rankIdx,22)+'</span><span class="t"><span class="tl">'+esc(monthLabel(h.key))+'</span>'+esc(h.rankIdx>=0?rankName(h.rankIdx):'Без ранга')+' · '+h.videos+' видео</span><span class="x">'+(h.fol===null?'':signed(h.fol))+'</span><span></span></li>';}).join('')+'</ul>':'<p class="empty">Завершённых сезонов пока нет. Лучший станет призраком на графике в аналитике.</p>';
-  els.views.season.innerHTML='<div class="view-head"><h2 class="view-title">'+monthName(ck)+'</h2><button class="btn small" data-act="add-video">'+icon('plus',14)+'Видео</button></div>'+
+  els.views.season.innerHTML='<div class="view-head"><h2 class="view-title">'+monthName(ck)+'</h2></div>'+
     '<p class="muted">Сезон '+fmtDate(keyStart(ck))+' — '+fmtDate(addDays(keyStart(nextKey(ck)),-1))+' · осталось '+dl+' '+plural(dl,['день','дня','дней'])+'</p>'+seasonTrack()+
     '<div class="legend-row"><span><i style="background:var(--accent)"></i>видео</span><span><i style="background:var(--miss)"></i>пропуск</span><span><i style="background:var(--bg-3)"></i>впереди</span></div>'+
     '<h3>Ранги сезона</h3><ul class="ranks">'+rows+'</ul><p class="note">Ранг считается по видео, опубликованным в этом месяце. Пороги и награды меняются в настройках.</p>'+
@@ -943,7 +938,6 @@ var SHEETS={
   video:function(){var t=todayStr();return head('Новое видео')+'<form data-form="video"><div class="field"><label for="v-title">Название или тема</label><input id="v-title" name="title" maxlength="80" placeholder="Например: как CRM теряет заявки" autocomplete="off"></div><div class="field"><label for="v-date">Дата публикации</label><input id="v-date" type="date" name="date" value="'+t+'" max="'+t+'"></div><p class="note">Засчитывается только опубликованное видео. Снятое, но не выложенное, не считается.</p><button class="btn primary wide" type="submit">'+icon('check',18)+'Опубликовано</button></form>';},
   result:function(){var t=todayStr(),c=S.settings.currency,fn=folNow();
     return head('Результаты')+'<form data-form="result">'+
-      '<div class="field"><label for="r-fol">Подписчиков сейчас, всего</label><input id="r-fol" name="followers" inputmode="numeric" placeholder="'+(fn!==null?'Сейчас '+fmt(fn):'Например: '+fmt(FOLLOWERS_NOW))+'" autocomplete="off"></div>'+
       '<div class="grid2"><div class="field"><label for="r-views">Просмотры, прирост</label><input id="r-views" name="views" inputmode="numeric" placeholder="0" autocomplete="off"></div><div class="field"><label for="r-money">Заказы, '+esc(c)+'</label><input id="r-money" name="money" inputmode="decimal" placeholder="0" autocomplete="off"></div></div>'+
       '<div class="field"><label for="r-date">Дата</label><input id="r-date" type="date" name="date" value="'+t+'" max="'+t+'"></div>'+
       '<div class="field"><label for="r-note">Комментарий</label><input id="r-note" name="note" maxlength="80" placeholder="Например: заказ после видео про бота" autocomplete="off"></div>'+
@@ -976,7 +970,6 @@ var SHEETS={
     '</form>'+
     '<h3>Свои трофеи</h3>'+(customs?'<ul class="log">'+customs+'</ul>':'<p class="empty">Добавь свой, например «Выступил на камеру без шпаргалки».</p>')+
     '<form data-form="custom" class="mt"><div class="field"><label for="c-name">Название</label><input id="c-name" name="cname" maxlength="40" autocomplete="off"></div><div class="field"><label for="c-desc">Условие</label><input id="c-desc" name="cdesc" maxlength="80" autocomplete="off"></div><div class="field"><label for="c-rar">Редкость</label><select id="c-rar" name="crar"><option value="common">Обычный</option><option value="rare" selected>Редкий</option><option value="epic">Эпический</option><option value="legend">Легендарный</option></select></div><button class="btn wide" type="submit">'+icon('plus',16)+'Добавить трофей</button></form>'+
-    '<h3>Подписчики</h3><div class="field"><label for="s-fol">Сколько сейчас подписчиков</label><input id="s-fol" inputmode="numeric" placeholder="'+(folNow()===null?'850':folNow())+'" maxlength="9"></div><button class="btn wide primary" data-act="fol-set">Записать число на сегодня</button>'+
     '<h3>Данные</h3>'+(S.demo?
       '<p class="note">Сейчас показаны демо-данные, чтобы посмотреть, как всё работает. Видео и подписчики из Instagram подтянутся, когда начнёшь с нуля.</p><button class="btn wide primary" data-act="start-fresh">Убрать демо и начать с нуля</button><button class="btn wide mt" data-act="demo-year">Показать демо за 1 год</button>':
       '<p class="note">Здесь твои настоящие данные. Видео и подписчики подтягиваются из Instagram сами.</p><button class="btn wide mt" data-act="demo-year" data-confirm="Заменить твои данные демо за год?">Заменить на демо за 1 год</button><button class="btn wide danger mt" data-act="start-fresh" data-confirm="Точно стереть всё?">Стереть всё и начать заново</button>');
@@ -1031,11 +1024,7 @@ var H={
   'settings-custom':function(){openSheet('settings');var c=$('c-name');if(c)c.scrollIntoView({block:'center'});},
   branch:function(el){openSheet('branch',el.dataset.id);},
   ach:function(el){openSheet('ach',el.dataset.id);},
-  'fol-set':function(){var i=document.getElementById('s-fol'),n=parseInt((i&&i.value||'').replace(/\s/g,''),10);
-    if(!(n>=0)){toast('Впиши число подписчиков');return;}
-    mutate(function(){setFollowersToday(S,n);});toast('Записано: '+fmt(n));if(i)i.value='';},
   'fol-range':function(el){FOL_RANGE=+el.dataset.r;renderStats();},
-  'add-video':function(){openSheet('video');},
   'add-result':function(){openSheet('result');},
   pick:function(el){if(!cur)return;cur.pick=el.dataset.id;refreshSheet();var i=$('sk-title');if(i)try{i.focus({preventScroll:true});}catch(e){}},
   del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];if(k==='videos'&&/^ig_/.test(id)&&S.igDel.indexOf(id)<0)S.igDel.push(id);});toast('Удалено');},
