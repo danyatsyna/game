@@ -693,7 +693,7 @@ function renderStage(){
 }
 
 /* ---------- tabs ---------- */
-var TABS=[{id:'hero',name:'Герой',icon:'user'},{id:'tasks',name:'Задачи',icon:'list'},{id:'season',name:'Сезон',icon:'shield'},{id:'stats',name:'Аналитика',icon:'chart'},{id:'trophies',name:'Трофеи',icon:'trophy'}];
+var TABS=[{id:'season',name:'Сезон',icon:'shield'},{id:'tasks',name:'Задачи',icon:'list'},{id:'hero',name:'Герой',icon:'user'},{id:'trophies',name:'Трофеи',icon:'trophy'},{id:'stats',name:'Аналитика',icon:'chart'}];
 var CATS=BRANCHES.map(function(b){return{id:b.id,name:b.name,icon:b.icon};}).concat([{id:'other',name:'Другое',icon:'list'}]);
 function catOf(id){return CATS.filter(function(c){return c.id===id;})[0]||CATS[CATS.length-1];}
 function actionName(id){return id==='task'?'Задача':(ACTIONS[id]||{}).name||'';}
