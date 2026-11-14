@@ -89,6 +89,8 @@ h2,h3,p{margin:0}
 html.on-hero body{background-image:none;background-color:#5a5d72}
 html.on-hero .app{gap:0;padding-block:0}
 html.on-hero,html.on-hero body{overflow:hidden;height:100%}
+html.on-hero body{position:fixed;inset:0;padding:0}
+html.on-hero .stage{position:fixed;left:0;right:0;top:0;bottom:var(--tb,92px);height:auto;margin:0}
 html.on-hero #demo{position:absolute;top:8px;left:16px;right:16px;z-index:5}
 
 .wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
@@ -656,7 +658,7 @@ function hudBot(){
   return '<div class="bot-row"><button class="nc-rank" data-act="rank" style="--rc:'+color+'" aria-label="Ранг: '+esc(name)+'">'+emblem(idx,34)+'<span>'+esc(name)+'</span></button>'+
     '<span class="nc-month">'+monthName(ck)+'</span></div>'+seasonTrack();
 }
-function setTb(){try{document.documentElement.style.setProperty('--sh',Math.round(els.tabbar.getBoundingClientRect().top-(els.stage.getBoundingClientRect().top||0))+'px');}catch(e){}}
+function setTb(){try{document.documentElement.style.setProperty('--tb',Math.round(els.tabbar.getBoundingClientRect().height)+'px');document.documentElement.style.setProperty('--sh',Math.round(els.tabbar.getBoundingClientRect().top-(els.stage.getBoundingClientRect().top||0))+'px');}catch(e){}}
 window.addEventListener('resize',setTb);
 function renderStage(){
   setTb();
