@@ -10,6 +10,7 @@ s = s.replace('__HERO__', hero).replace('__DEMOYEAR__', demo)
 head = ('<!doctype html><html lang="ru"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
         '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
+        '<link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">'
         '<meta name="apple-mobile-web-app-title" content="Билд"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
         '<style>:root{color-scheme:light}html:not(.on-hero) body{padding-top:env(safe-area-inset-top,0px)}'
         'body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
