@@ -656,7 +656,7 @@ function hudBot(){
   return '<div class="bot-row"><button class="nc-rank" data-act="rank" style="--rc:'+color+'" aria-label="Ранг: '+esc(name)+'">'+emblem(idx,34)+'<span>'+esc(name)+'</span></button>'+
     '<span class="nc-month">'+monthName(ck)+'</span></div>'+seasonTrack();
 }
-function setTb(){try{document.documentElement.style.setProperty('--sh',Math.round(els.tabbar.getBoundingClientRect().top)+'px');}catch(e){}}
+function setTb(){try{document.documentElement.style.setProperty('--sh',Math.round(els.tabbar.getBoundingClientRect().top-(els.stage.getBoundingClientRect().top||0))+'px');}catch(e){}}
 window.addEventListener('resize',setTb);
 function renderStage(){
   setTb();

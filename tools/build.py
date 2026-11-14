@@ -10,8 +10,8 @@ s = s.replace('__HERO__', hero).replace('__DEMOYEAR__', demo)
 head = ('<!doctype html><html lang="ru"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
         '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
-        '<meta name="apple-mobile-web-app-title" content="Билд">'
-        '<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}'
+        '<meta name="apple-mobile-web-app-title" content="Билд"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
+        '<style>:root{color-scheme:light}html:not(.on-hero) body{padding-top:env(safe-area-inset-top,0px)}'
         'body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
 (root / 'index.html').write_text(head + s + '</body></html>', encoding='utf-8')
 print('built index.html', len(s) // 1024, 'KB')
