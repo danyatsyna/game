@@ -451,7 +451,8 @@ var BRANCHES=[
     {id:'book',name:'Книга',verb:'Какую книгу дочитал',count:'Книг прочитано',ph:'Название книги'},
     {id:'consult',name:'Консультация',verb:'С кем или о чём',count:'Консультаций проведено',ph:'Например: настройка воронки'}]},
   {id:'fitness',name:'Форма',icon:'dumbbell',step:1300,titles:["Новичок", "Ученик", "Рекрут", "Рядовой", "Боец", "Выживший", "Ветеран", "Мастер", "Воитель", "Гладиатор", "Монах Шаолиня", "Паладин", "Палач", "Берсерк", "Хищник", "Предатор", "Разрушитель", "Терминатор", "Ликвидатор", "Военачальник", "Избранный", "Повелитель", "Император", "Титан", "Легенда"],x:71,y:40,actions:[
-    {id:'workout',name:'Тренировка',verb:'Что тренировал',count:'Тренировок',ph:'Например: спина и бицепс'}]}
+    {id:'workout',name:'Тренировка',verb:'Что тренировал',count:'Тренировок',ph:'Например: спина и бицепс'},
+    {id:'abs',name:'Пресс',verb:'Что делал',count:'Раз на пресс',ph:'Например: 3 подхода по 20'}]}
 ];
 var ACTIONS={};BRANCHES.forEach(function(b){b.actions.forEach(function(a){ACTIONS[a.id]=Object.assign({branch:b.id},a);});});
 /* stage units: x 0–100, y 0–150 (image is 2:3). Each wire runs from a slot to its attachment point on the character. */
@@ -459,7 +460,7 @@ var WIRES={content:[[17.5,62],[17.5,52.4],[47.5,52.4]],speech:[[71,24.2],[62,24.
 
 function defaultSettings(){return{
   ranks:[{name:'Бронза',videos:4,reward:''},{name:'Серебро',videos:8,reward:''},{name:'Золото',videos:12,reward:''},{name:'Платина',videos:16,reward:''},{name:'Алмаз',videos:20,reward:''},{name:'Легенда',videos:30,reward:''}],
-  xp:{course:40,method:15,exercise:10,book:60,consult:25,workout:100,task:15},
+  xp:{course:40,method:15,exercise:10,book:60,consult:25,workout:100,abs:20,task:15},
   xpVer:3,
   currency:'₴'
 };}
@@ -930,7 +931,7 @@ var SHEETS={
     var b=BRANCHES.filter(function(x){return x.id===id;})[0];if(!b)return head('Навык');
     var xp=branchXp(id),L=lvl(xp,id),nx=need(L+1,id),pct=Math.round((xp-need(L,id))/(nx-need(L,id))*100);
     var entries=S.skills.filter(function(s){return s.branch===id;}).sort(byDateDesc);
-    var counts=b.actions.map(function(a){return '<div class="ctr dk"><b>'+entries.filter(function(e){return e.action===a.id;}).length+'</b><span>'+a.count+'</span></div>';}).join('')+'<div class="ctr dk"><b>'+entries.filter(function(e){return e.action==='task';}).length+'</b><span>Задач выполнено</span></div>';
+    var counts=b.actions.map(function(a){return '<div class="ctr dk"><b>'+entries.filter(function(e){return e.action===a.id;}).length+'</b><span>'+a.count+'</span></div>';}).join('');
     var picks=b.actions.map(function(a){return '<button class="btn small pick'+(cur&&cur.pick===a.id?' sel':'')+'" data-act="pick" data-id="'+a.id+'">'+icon('plus',14)+a.name+' · '+S.settings.xp[a.id]+' XP</button>';}).join('');
     var pa=cur&&cur.pick?ACTIONS[cur.pick]:null,form='';
     if(pa&&pa.branch===id)form='<form class="pick-form" data-form="skill"><input type="hidden" name="action" value="'+pa.id+'"><div class="field"><label for="sk-title">'+pa.verb+'</label><input id="sk-title" name="title" placeholder="'+esc(pa.ph)+'" maxlength="80" autocomplete="off"></div><button class="btn primary wide" type="submit">'+icon('check',18)+'Записать +'+S.settings.xp[pa.id]+' XP</button></form>';
