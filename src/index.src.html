@@ -840,6 +840,70 @@ function followersCard(){
   var svg='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Подписчики: с '+fmt(first.count)+' до '+fmt(last.count)+'">'+g+'<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+B+'" y2="'+B+'"/>'+marks+xl+hits+'</svg>';
   return '<section class="card dk" id="sec-fol">'+hd+top+sw+svg+btn+list+'</section>';
 }
+
+/* ---------- Форма: charts ---------- */
+var FIT_VIEW='weeks',FIT_GOAL=3,FIT_MONTH=13,WD=['пн','вт','ср','чт','пт','сб','вс'];
+function fitDays(act){var m={};S.skills.forEach(function(e){if(e.branch==='fitness'&&e.action===(act||'workout'))m[e.date]=(m[e.date]||0)+1;});return m;}
+function wdIdx(dn){return (dn+3)%7;}
+function fitWeeks(n){var td=dayNum(todayStr()),ws=td-wdIdx(td),days=fitDays(),out=[];
+  for(var i=n-1;i>=0;i--){var st=ws-7*i,c=0;for(var d=0;d<7;d++)c+=days[fromDayNum(st+d)]||0;out.push({s:st,c:c,cur:i===0});}return out;}
+function fitStreak(){var w=fitWeeks(200),n=0,i=w.length-1;if(w[i].c>=FIT_GOAL)n++;for(i--;i>=0&&w[i].c>=FIT_GOAL;i--)n++;return n;}
+function fitBars(items,goal,gl){
+  var W=320,H=168,L=28,R=8,T=16,B=138,mv=Math.max.apply(null,items.map(function(i){return i.v;})),mx=goal!=null?Math.max(Math.ceil(goal*1.25),mv+1):Math.max(1,mv)+1,n=items.length,pw=(W-L-R)/n,bw=Math.min(28,pw*.62);
+  var Y=function(v){return B-v/mx*(B-T);},g='',bars='',lab='',hits='';
+  (goal!=null?[0,goal]:[0,mv]).filter(function(v,i,a){return a.indexOf(v)===i;}).forEach(function(v){g+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'"/><text x="'+(L-6)+'" y="'+(Y(v)+3).toFixed(1)+'" text-anchor="end">'+v+'</text>';});
+  items.forEach(function(it,i){var cx=L+pw*(i+.5),y=Y(it.v);
+    if(it.v>0)bars+='<path class="bar'+((it.hi!=null?it.hi:goal!=null&&it.v>=goal)?' cur':'')+'" d="M'+(cx-bw/2).toFixed(1)+','+B+'V'+(y+4).toFixed(1)+'a4,4 0 0 1 4,-4h'+(bw-8).toFixed(1)+'a4,4 0 0 1 4,4V'+B+'Z"/><text class="strong" x="'+cx.toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle">'+it.v+'</text>';
+    if(it.l)lab+='<text x="'+cx.toFixed(1)+'" y="'+(B+16)+'" text-anchor="middle">'+it.l+'</text>';
+    hits+='<rect class="hit" x="'+(L+pw*i).toFixed(1)+'" y="0" width="'+pw.toFixed(1)+'" height="'+B+'" data-tip="'+it.t+'"/>';});
+  var gl2=goal!=null?'<line class="ghost" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(goal).toFixed(1)+'" y2="'+Y(goal).toFixed(1)+'"/>':'';
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(gl)+'">'+g+'<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+B+'" y2="'+B+'"/>'+gl2+bars+lab+hits+'</svg>';
+}
+function fitWeeksView(){
+  var w=fitWeeks(12),cur=w[w.length-1],streak=fitStreak();
+  var items=w.map(function(x,i){var a=fromDayNum(x.s),b=fromDayNum(x.s+6);return {v:x.c,l:i%3===(w.length-1)%3?fmtDate(a):'',t:fmtDate(a)+'–'+fmtDate(b)+': '+x.c+' '+plural(x.c,['тренировка','тренировки','тренировок'])};});
+  return {sub:'Норма: '+FIT_GOAL+' в неделю · на этой неделе '+cur.c+' из '+FIT_GOAL+' · недель с нормой подряд: '+streak,svg:fitBars(items,FIT_GOAL,'Тренировки по неделям')};
+}
+function fitMonthsView(){
+  var days=fitDays(),keys={},first=null;Object.keys(days).forEach(function(d){var k=d.slice(0,7);keys[k]=(keys[k]||0)+days[d];if(!first||k<first)first=k;});
+  var ck=curKey(),list=[],k=ck;for(var i=0;i<12;i++){list.unshift(k);if(k<=(first||ck))break;k=prevKey(k);}
+  var items=list.map(function(k){var v=keys[k]||0;return {v:v,l:monthName(k).slice(0,3),t:monthName(k)+': '+v+' '+plural(v,['тренировка','тренировки','тренировок'])+' из '+FIT_MONTH};});
+  return {sub:'1 уровень = '+FIT_MONTH+' тренировок в месяц. Жёлтый столбик — уровень набран.',svg:fitBars(items,FIT_MONTH,'Тренировки по месяцам')};
+}
+function fitCalView(){
+  var N=13,td=dayNum(todayStr()),ws=td-wdIdx(td)-7*(N-1),w=fitDays(),a=fitDays('abs'),cell=19,pitch=22,L=22,T=16,svg='',lab='',lastM='';
+  for(var c=0;c<N;c++){var ms=fromDayNum(ws+c*7).slice(5,7);if(ms!==lastM){lab+='<text x="'+(L+c*pitch)+'" y="10">'+monthName(fromDayNum(ws+c*7).slice(0,7)).slice(0,3)+'</text>';lastM=ms;}
+    for(var r=0;r<7;r++){var d=ws+c*7+r;if(d>td)continue;var ds=fromDayNum(d),has=w[ds],ab=a[ds],x=L+c*pitch,y=T+r*pitch;
+      svg+='<rect x="'+x+'" y="'+y+'" width="'+cell+'" height="'+cell+'" rx="4" style="fill:'+(has?'var(--accent)':ab?'var(--heat2)':'var(--bg-3)')+'"'+(d===td?' stroke="var(--fg-2)" stroke-width="1.5"':'')+' data-tip="'+fmtDate(ds)+(has?': тренировка':ab?': только пресс':'')+'"/>';}}
+  [0,2,4,6].forEach(function(r){lab+='<text x="0" y="'+(T+r*pitch+14)+'">'+WD[r]+'</text>';});
+  var H=T+7*pitch+14;
+  var total=0;for(var d=ws;d<=td;d++)total+=w[fromDayNum(d)]||0;
+  return {sub:'Последние '+N+' недель: '+total+' '+plural(total,['тренировка','тренировки','тренировок'])+'. Жёлтый — тренировка, тёмно-жёлтый — только пресс.',svg:'<svg class="chart" viewBox="0 0 320 '+H+'" role="img" aria-label="Календарь тренировок">'+lab+svg+'</svg>'};
+}
+function fitXpView(){
+  var ents=S.skills.filter(function(e){return e.branch==='fitness';}).sort(function(x,y){return x.date<y.date?-1:x.date>y.date?1:0;}),xp=ents.reduce(function(t,e){return t+(S.settings.xp[e.action]||0);},0),cL=lvl(xp,'fitness'),lo=Math.max(1,cL-3);
+  var W=320,H=168,L=44,R=8,T=14,B=138,yMin=need(lo,'fitness'),yMax=need(cL+1,'fitness');
+  var td=dayNum(todayStr()),d0=ents.length?dayNum(ents[0].date)-1:td-30,span=Math.max(1,td-d0);
+  var X=function(d){return L+(d-d0)/span*(W-L-R);},Y=function(v){return B-(Math.max(v,yMin)-yMin)/(yMax-yMin)*(B-T);};
+  var endY=Y(xp),lowLbl=function(y){return y-endY>=0&&y-endY<18;};
+  var g='';for(var q=lo;q<=cL+1;q++){var y=Y(need(q,'fitness')).toFixed(1);g+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(L-6)+'" y="'+(+y+3)+'" text-anchor="end">'+fmt(need(q,'fitness'))+'</text><text class="name" x="'+(lowLbl(+y)?L+6:W-R)+'" y="'+(+y-4)+'" text-anchor="'+(lowLbl(+y)?'start':'end')+'">'+q+' · '+tier(q,'fitness').toUpperCase()+'</text>';}
+  var pts=[[X(d0),Y(0)]],acc=0;ents.forEach(function(e){acc+=S.settings.xp[e.action]||0;var x=X(dayNum(e.date)),last=pts[pts.length-1];if(Math.abs(last[0]-x)<.5)last[1]=Y(acc);else pts.push([x,Y(acc)]);});pts.push([X(td),Y(acc)]);
+  var line='M'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join('L'),e=pts[pts.length-1];
+  var xl='<text x="'+L+'" y="'+(B+16)+'" text-anchor="start">'+(ents.length?fmtDate(ents[0].date):'')+'</text><text x="'+(W-R)+'" y="'+(B+16)+'" text-anchor="end">сегодня</text>';
+  return {sub:fmt(xp)+' XP · до уровня '+(cL+1)+' «'+tier(cL+1,'fitness')+'» осталось '+fmt(yMax-xp),svg:'<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Накопленный опыт">'+g+'<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+B+'" y2="'+B+'"/><path class="line" d="'+line+'"/><circle class="dot" cx="'+e[0].toFixed(1)+'" cy="'+e[1].toFixed(1)+'" r="5"/>'+xl+'</svg>'};
+}
+function fitDowView(){
+  var w=fitDays(),cnt=[0,0,0,0,0,0,0],tot=0;Object.keys(w).forEach(function(d){cnt[wdIdx(dayNum(d))]+=w[d];tot+=w[d];});
+  var mx=Math.max.apply(null,cnt),items=cnt.map(function(v,i){return {v:v,l:WD[i],t:WD[i].toUpperCase()+': '+v+' '+plural(v,['тренировка','тренировки','тренировок'])};});
+  items.forEach(function(i){i.hi=mx>0&&i.v===mx;});var svg=fitBars(items,null,'Тренировки по дням недели');
+  return {sub:'Всего '+tot+' '+plural(tot,['тренировка','тренировки','тренировок'])+'. Жёлтый — самый частый день.',svg:svg};
+}
+function fitChartHTML(){
+  var V=[['weeks','Недели',fitWeeksView],['months','Месяцы',fitMonthsView],['cal','Календарь',fitCalView],['xp','XP',fitXpView],['dow','Дни',fitDowView]];
+  var v=V.filter(function(x){return x[0]===FIT_VIEW;})[0]||V[0],r=v[2]();
+  var seg='<div class="seg" role="group" aria-label="График">'+V.map(function(x){return '<button type="button" class="'+(x[0]===v[0]?'on':'')+'" data-act="fit-view" data-v="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div>';
+  return '<h3>График</h3><section class="card dk">'+seg+'<p class="card-sub">'+esc(r.sub)+'</p>'+r.svg+'</section>';
+}
 function renderStats(){
   var ck=curKey(),td=dayNum(todayStr()),dayIdx=+todayStr().slice(8,10),pace=seasonVideos().length/dayIdx*7;
   var wk=td-6,doneW=S.tasks.filter(function(t){return t.done&&dayNum(t.done)>=wk;}).length,doneAll=S.tasks.filter(function(t){return t.done;}).length;
@@ -937,7 +1001,7 @@ var SHEETS={
     if(pa&&pa.branch===id)form='<form class="pick-form" data-form="skill"><input type="hidden" name="action" value="'+pa.id+'"><div class="field"><label for="sk-title">'+pa.verb+'</label><input id="sk-title" name="title" placeholder="'+esc(pa.ph)+'" maxlength="80" autocomplete="off"></div><button class="btn primary wide" type="submit">'+icon('check',18)+'Записать +'+S.settings.xp[pa.id]+' XP</button></form>';
     var list=entries.length?'<ul class="log">'+entries.slice(0,50).map(function(e){return logRow('skills',e,actionName(e.action),e.title,'+'+(S.settings.xp[e.action]||0));}).join('')+'</ul>':'<p class="empty">Пока пусто. Нажми на действие выше, чтобы записать первое.</p>';
     return head(icon(b.icon,22)+b.name)+'<div class="lvl-big" style="--rc:var(--accent)"><span class="n">'+L+'</span><span><span class="eyebrow">Уровень</span><br><span class="tier">'+tier(L,id)+'</span></span><span class="xp">'+fmt(xp)+' / '+fmt(nx)+' XP</span></div><span class="bar"><i style="width:'+pct+'%"></i></span>'+
-      '<div class="counters">'+counts+'</div><h3>Записать</h3><div class="pick-row">'+picks+'<button class="btn small" data-act="task-for" data-cat="'+id+'">'+icon('list',14)+'Задача в ветку</button></div>'+form+'<h3>История</h3>'+list;
+      '<div class="counters">'+counts+'</div><h3>Записать</h3><div class="pick-row">'+picks+'<button class="btn small" data-act="task-for" data-cat="'+id+'">'+icon('list',14)+'Задача в ветку</button></div>'+form+(id==='fitness'?fitChartHTML():'')+'<h3>История</h3>'+list;
   },
   video:function(){var t=todayStr();return head('Новое видео')+'<form data-form="video"><div class="field"><label for="v-title">Название или тема</label><input id="v-title" name="title" maxlength="80" placeholder="Например: как CRM теряет заявки" autocomplete="off"></div><div class="field"><label for="v-date">Дата публикации</label><input id="v-date" type="date" name="date" value="'+t+'" max="'+t+'"></div><p class="note">Засчитывается только опубликованное видео. Снятое, но не выложенное, не считается.</p><button class="btn primary wide" type="submit">'+icon('check',18)+'Опубликовано</button></form>';},
   result:function(){var t=todayStr(),c=S.settings.currency,fn=folNow();
@@ -1030,6 +1094,7 @@ var H={
   ach:function(el){openSheet('ach',el.dataset.id);},
   'fol-range':function(el){FOL_RANGE=+el.dataset.r;renderStats();},
   'add-result':function(){openSheet('result');},
+  'fit-view':function(el){FIT_VIEW=el.dataset.v;refreshSheet();},
   pick:function(el){if(!cur)return;cur.pick=el.dataset.id;refreshSheet();var i=$('sk-title');if(i)try{i.focus({preventScroll:true});}catch(e){}},
   del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];if(k==='videos'&&/^(ig|hs)_/.test(id)&&S.igDel.indexOf(id)<0)S.igDel.push(id);});toast('Удалено');},
   'custom-unlock':function(el){var a=S.custom.filter(function(c){return c.id===el.dataset.id;})[0];if(!a)return;mutate(function(){S.ach[a.id]=todayStr();});queuePopup({kind:'ach',a:Object.assign({icon:'star'},a)});},
