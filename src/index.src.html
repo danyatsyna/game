@@ -450,7 +450,7 @@ var BRANCHES=[
   {id:'sales',name:'Продажи',icon:'dollar',x:71,y:111.5,actions:[
     {id:'book',name:'Книга',verb:'Какую книгу дочитал',count:'Книг прочитано',ph:'Название книги'},
     {id:'consult',name:'Консультация',verb:'С кем или о чём',count:'Консультаций проведено',ph:'Например: настройка воронки'}]},
-  {id:'fitness',name:'Форма',icon:'dumbbell',step:130,x:71,y:40,actions:[
+  {id:'fitness',name:'Форма',icon:'dumbbell',step:1300,titles:["Новичок", "Первый подход", "Втянулся", "Постоянный клиент", "Железная привычка", "Рабочий вес", "Крепыш", "Силач", "Атлет", "Стальной", "Гранитный", "Титан", "Ветеран зала", "Машина", "Бронебойный", "Монолит", "Гладиатор", "Колосс", "Несокрушимый", "Легенда зала"],x:71,y:40,actions:[
     {id:'workout',name:'Тренировка',verb:'Что тренировал',count:'Тренировок',ph:'Например: спина и бицепс'}]}
 ];
 var ACTIONS={};BRANCHES.forEach(function(b){b.actions.forEach(function(a){ACTIONS[a.id]=Object.assign({branch:b.id},a);});});
@@ -459,7 +459,8 @@ var WIRES={content:[[17.5,62],[17.5,52.4],[47.5,52.4]],speech:[[71,24.2],[62,24.
 
 function defaultSettings(){return{
   ranks:[{name:'Бронза',videos:4,reward:''},{name:'Серебро',videos:8,reward:''},{name:'Золото',videos:12,reward:''},{name:'Платина',videos:16,reward:''},{name:'Алмаз',videos:20,reward:''},{name:'Легенда',videos:30,reward:''}],
-  xp:{course:40,method:15,exercise:10,book:60,consult:25,workout:10,task:15},
+  xp:{course:40,method:15,exercise:10,book:60,consult:25,workout:100,task:15},
+  xpVer:3,
   currency:'₴'
 };}
 function freshState(){var k=curKey();return{v:2,demo:false,profile:{name:'Даниил',hero:null},settings:defaultSettings(),since:k,season:{key:k},videos:[],results:[],skills:[],tasks:[],followers:[],ach:{},custom:[],igDel:[]};}
@@ -504,8 +505,8 @@ function normalize(d){
   var s=Object.assign(freshState(),d),st=d.settings||{},ds=defaultSettings();
   s.settings={
     ranks:Array.isArray(st.ranks)&&st.ranks.length===6?st.ranks:ds.ranks,
-    xp:Object.assign(ds.xp,st.xp||{},st.xpVer===2?{}:{workout:ds.xp.workout}),
-    xpVer:2,
+    xp:Object.assign(ds.xp,st.xp||{},st.xpVer===3?{}:{workout:ds.xp.workout}),
+    xpVer:3,
     currency:st.currency||(st.rating&&st.rating.currency)||'₴'
   };
   s.profile=Object.assign({name:'Даниил',hero:null},d.profile||{});delete s.profile.photo;
@@ -557,12 +558,12 @@ function folGain(k){
 function pastMonths(){var out=[],k=S.since,ck=curKey(),g=0;while(k<ck&&g++<240){out.push(k);k=nextKey(k);}return out;}
 function monthStats(k){var v=monthVideos(k).length,idx=rankIdxFor(v);return{key:k,videos:v,rankIdx:idx,views:sums(monthResults(k)).views,fol:folGain(k)};}
 function pastSeasons(){return pastMonths().map(monthStats);}
-/* XP needed to reach level L. A branch with `step` has equal levels (Форма: 130 XP = 13 workouts = 1 month at 3 per week); the rest get harder with every level. */
+/* XP needed to reach level L. A branch with `step` has equal levels (Форма: 1300 XP = 13 workouts = 1 month at 3 per week); the rest get harder with every level. */
 function need(L,id){var b=BRANCHES.filter(function(x){return x.id===id;})[0];return b&&b.step?b.step*(L-1):25*(L-1)*L;}
 function lvl(xp,id){var L=1;while(need(L+1,id)<=xp)L++;return L;}
 function branchXp(id){return S.skills.reduce(function(a,s){return s.branch===id?a+(S.settings.xp[s.action]||0):a;},0);}
 function branchName(id){var b=BRANCHES.filter(function(x){return x.id===id;})[0];return b?b.name:'';}
-function tier(L){return L<=2?'Новичок':L<=5?'Боец':L<=9?'Ветеран':L<=14?'Эксперт':'Мастер';}
+function tier(L,id){var b=BRANCHES.filter(function(x){return x.id===id;})[0];if(b&&b.titles)return b.titles[Math.min(L,b.titles.length)-1];return L<=2?'Новичок':L<=5?'Боец':L<=9?'Ветеран':L<=14?'Эксперт':'Мастер';}
 function levels(){var o={};BRANCHES.forEach(function(b){o[b.id]=lvl(branchXp(b.id),b.id);});return o;}
 function charLevel(){var l=levels();return Object.keys(l).reduce(function(a,k){return a+l[k];},0);}
 function maxInWindow(days,len){var a=days.slice().sort(function(x,y){return x-y;});var i=0,best=0;for(var j=0;j<a.length;j++){while(a[j]-a[i]>=len)i++;best=Math.max(best,j-i+1);}return best;}
@@ -934,7 +935,7 @@ var SHEETS={
     var pa=cur&&cur.pick?ACTIONS[cur.pick]:null,form='';
     if(pa&&pa.branch===id)form='<form class="pick-form" data-form="skill"><input type="hidden" name="action" value="'+pa.id+'"><div class="field"><label for="sk-title">'+pa.verb+'</label><input id="sk-title" name="title" placeholder="'+esc(pa.ph)+'" maxlength="80" autocomplete="off"></div><button class="btn primary wide" type="submit">'+icon('check',18)+'Записать +'+S.settings.xp[pa.id]+' XP</button></form>';
     var list=entries.length?'<ul class="log">'+entries.slice(0,50).map(function(e){return logRow('skills',e,actionName(e.action),e.title,'+'+(S.settings.xp[e.action]||0));}).join('')+'</ul>':'<p class="empty">Пока пусто. Нажми на действие выше, чтобы записать первое.</p>';
-    return head(icon(b.icon,22)+b.name)+'<div class="lvl-big" style="--rc:var(--accent)"><span class="n">'+L+'</span><span><span class="eyebrow">Уровень</span><br><span class="tier">'+tier(L)+'</span></span><span class="xp">'+fmt(xp)+' / '+fmt(nx)+' XP</span></div><span class="bar"><i style="width:'+pct+'%"></i></span>'+
+    return head(icon(b.icon,22)+b.name)+'<div class="lvl-big" style="--rc:var(--accent)"><span class="n">'+L+'</span><span><span class="eyebrow">Уровень</span><br><span class="tier">'+tier(L,id)+'</span></span><span class="xp">'+fmt(xp)+' / '+fmt(nx)+' XP</span></div><span class="bar"><i style="width:'+pct+'%"></i></span>'+
       '<div class="counters">'+counts+'</div><h3>Записать</h3><div class="pick-row">'+picks+'<button class="btn small" data-act="task-for" data-cat="'+id+'">'+icon('list',14)+'Задача в ветку</button></div>'+form+'<h3>История</h3>'+list;
   },
   video:function(){var t=todayStr();return head('Новое видео')+'<form data-form="video"><div class="field"><label for="v-title">Название или тема</label><input id="v-title" name="title" maxlength="80" placeholder="Например: как CRM теряет заявки" autocomplete="off"></div><div class="field"><label for="v-date">Дата публикации</label><input id="v-date" type="date" name="date" value="'+t+'" max="'+t+'"></div><p class="note">Засчитывается только опубликованное видео. Снятое, но не выложенное, не считается.</p><button class="btn primary wide" type="submit">'+icon('check',18)+'Опубликовано</button></form>';},
@@ -1000,7 +1001,7 @@ function popupHTML(p){
   if(p.kind==='ach'){var R=RARITY[p.a.r];color=R.c;eyebrow='Новый трофей';badgeHtml=badge(p.a.icon||'star',true,104);title=p.a.name;desc=descOf(p.a);tag=R.name;}
   else if(p.kind==='rank'){var r=S.settings.ranks[p.idx];color='var(--rank'+p.idx+')';eyebrow='Новый ранг';badgeHtml=emblem(p.idx,104);title=r.name;desc=r.videos+' видео за месяц';
     extra='<div class="pop-reward">'+(r.reward?'<span class="eyebrow">Награда</span><br>'+esc(r.reward):'Награда за этот ранг не задана. Впиши её в настройках.')+'</div>';}
-  else{color='var(--accent)';eyebrow='Уровень повышен';badgeHtml='<span class="pop-lvl">'+icon(p.b.icon,30)+'<b>'+p.L+'</b></span>';title=p.b.name;desc='Уровень '+p.L+' · '+tier(p.L);}
+  else{color='var(--accent)';eyebrow='Уровень повышен';badgeHtml='<span class="pop-lvl">'+icon(p.b.icon,30)+'<b>'+p.L+'</b></span>';title=p.b.name;desc='Уровень '+p.L+' · '+tier(p.L,p.b.id);}
   return '<div class="pop-card dk" style="--pc:'+color+'" role="dialog" aria-modal="true" aria-label="'+esc(eyebrow)+'"><div class="pop-rays"></div><div class="pop-glow"></div><div class="pop-eyebrow">'+eyebrow+'</div><div class="pop-badge">'+badgeHtml+'</div><h2 class="pop-title">'+esc(title)+'</h2><p class="pop-desc">'+esc(desc)+'</p>'+(tag?'<div class="tag" style="position:relative">'+tag+'</div>':'')+extra+'<button class="btn primary wide mt" data-act="pop-ok">Принять</button></div>';
 }
 var toastT;
@@ -1029,7 +1030,7 @@ var H={
   'fol-range':function(el){FOL_RANGE=+el.dataset.r;renderStats();},
   'add-result':function(){openSheet('result');},
   pick:function(el){if(!cur)return;cur.pick=el.dataset.id;refreshSheet();var i=$('sk-title');if(i)try{i.focus({preventScroll:true});}catch(e){}},
-  del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];if(k==='videos'&&/^ig_/.test(id)&&S.igDel.indexOf(id)<0)S.igDel.push(id);});toast('Удалено');},
+  del:function(el){var k=el.dataset.kind,id=el.dataset.id;if(k==='custom'&&cur&&cur.kind==='ach')closeSheet();mutate(function(){S[k]=S[k].filter(function(x){return x.id!==id;});if(k==='custom')delete S.ach[id];if(k==='videos'&&/^(ig|hs)_/.test(id)&&S.igDel.indexOf(id)<0)S.igDel.push(id);});toast('Удалено');},
   'custom-unlock':function(el){var a=S.custom.filter(function(c){return c.id===el.dataset.id;})[0];if(!a)return;mutate(function(){S.ach[a.id]=todayStr();});queuePopup({kind:'ach',a:Object.assign({icon:'star'},a)});},
   'photo-remove':function(){S.profile.hero=null;save();render();toast('Исходный персонаж возвращён');},
   'demo-year':function(){S=demoYearState();save();closeSheet();render();toast('Демо за год загружено');},
@@ -1124,13 +1125,23 @@ function igMergeVideos(arr){
   if(fresh.length){mutate(function(){fresh.forEach(function(v){S.videos.push(v);});});}
   else if(old.length){save();render();}
 }
+function igMergeHist(arr){
+  var have={},gone=S.igDel||[],add=[];
+  S.skills.forEach(function(x){have[x.id]=1;});
+  arr.forEach(function(p){
+    if(!p||!p.id||!/^\d{4}-\d\d-\d\d$/.test(p.date)||!ACTIONS[p.action]||have[p.id]||gone.indexOf(p.id)>=0)return;have[p.id]=1;
+    add.push({id:p.id,date:p.date,branch:ACTIONS[p.action].branch,action:p.action,title:String(p.title||'').slice(0,120)});});
+  if(!add.length)return;
+  add.forEach(function(x){S.skills.push(x);});checkAch(true);save();render();
+}
 function syncIG(force){
   if(S.demo||typeof fetch!=='function')return;
   var now=Date.now();if(!force&&now-igLast<60000)return;igLast=now;
-  Promise.all([igGet('followers'),igGet('videos')]).then(function(r){
+  Promise.all([igGet('followers'),igGet('videos'),igGet('history')]).then(function(r){
     if(S.demo)return;
     if(r[0].length&&igMergeFollowers(r[0])){save();render();}
     if(r[1].length)igMergeVideos(r[1]);
+    if(r[2].length)igMergeHist(r[2]);
   });
 }
 syncIG(true);
