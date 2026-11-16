@@ -25,6 +25,12 @@ for (const m of j.data.filter(counts)) {
   const rec = { id: m.id, date, title, url: m.permalink };
   if (i >= 0) arr[i] = rec; else { arr.push(rec); added++; }
 }
+// a hand-added placeholder ("pending_<date>") is dropped as soon as the real post for that day arrives
+for (const m of j.data.filter(counts)) {
+  const date = kyiv.format(new Date(m.timestamp));
+  const k = arr.findIndex(x => x.id === 'pending_' + date);
+  if (k >= 0 && arr.some(x => x.id === m.id)) arr.splice(k, 1);
+}
 arr.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 fs.writeFileSync(file, JSON.stringify(arr, null, 1) + '\n');
 console.log(`videos: ${j.data.length} posts checked, ${added} new, ${arr.length} in file`);
