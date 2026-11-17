@@ -17,6 +17,8 @@ const counts = m => m.media_type === 'VIDEO';
 const kyiv = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Kyiv' });
 const file = 'data/videos.json';
 const arr = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+// diagnostics: newest posts as the API sees them
+for (const m of j.data.slice(0, 5)) console.log('post', m.timestamp, m.media_type, m.media_product_type || '', m.permalink);
 let added = 0;
 for (const m of j.data.filter(counts)) {
   const date = kyiv.format(new Date(m.timestamp));
