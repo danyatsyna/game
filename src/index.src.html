@@ -169,6 +169,7 @@ textarea{min-height:100px;font-size:13px;resize:vertical}
 .empty{color:var(--fg-3);font-size:13px;padding:6px 0}
 .ranks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rk{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px 9px 10px;box-shadow:inset 4px 0 0 var(--rc)}
+.ranks .rk.dk{background-image:linear-gradient(90deg,#ffffff26 var(--p,0%),#ffffff00 var(--p,0%))}
 .rk .emb{display:block}
 img.emb{filter:saturate(1.25) contrast(1.08) drop-shadow(0 1px 2px #0006)!important}
 .rk .nm{font-family:var(--f-display);font-weight:800;font-style:italic;font-size:20px;line-height:1.05;text-transform:uppercase;letter-spacing:.01em;color:var(--rc)}
@@ -748,7 +749,7 @@ function renderTasks(){
 function renderSeason(){
   var ck=curKey(),vids=seasonVideos().sort(byDateDesc),n=vids.length,idx=rankIdxFor(n),dl=daysLeft(),cu=S.settings.currency;
   var rows=S.settings.ranks.map(function(r,i){var got=n>=r.videos;var cls=got?(i===idx?'cur got':'got'):'lock';
-    return '<li class="rk '+cls+(got&&i===idx?' lt':' dk')+'" style="--rc:var(--rank'+i+')">'+emblem(i,44)+'<span><span class="nm">'+esc(r.name)+'</span><span class="rw">'+(r.reward?'Награда: '+esc(r.reward):'Награда не задана')+'</span></span><span class="st">'+(got?icon('check',14)+r.videos:n+' / '+r.videos)+'</span></li>';}).join('');
+    return '<li class="rk '+cls+(got&&i===idx?' lt':' dk')+'" style="--rc:var(--rank'+i+');--p:'+Math.min(100,Math.round(n/Math.max(1,r.videos)*100))+'%">'+emblem(i,44)+'<span><span class="nm">'+esc(r.name)+'</span><span class="rw">'+(r.reward?'Награда: '+esc(r.reward):'Награда не задана')+'</span></span><span class="st">'+(got?icon('check',14)+r.videos:n+' / '+r.videos)+'</span></li>';}).join('');
   var list=vids.length?'<ul class="log">'+vids.map(function(v){return logRow('videos',v,null,v.title||'Без названия','');}).join('')+'</ul>':'<p class="empty">В этом сезоне видео пока нет.</p>';
   var t=sums(seasonResults()),fg=folGain(ck);
   var tiles='<div class="tiles"><div class="tile dk"><span class="k">Подписчики</span><b>'+(fg===null?'—':signed(fg))+'</b><span>за '+monthName(ck).toLowerCase()+'</span></div>'+
