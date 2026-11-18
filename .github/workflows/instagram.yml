@@ -1,7 +1,10 @@
 name: Instagram sync
 on:
   schedule:
-    - cron: '7 * * * *'   # every hour
+    # once a day at 22:00 Kyiv. GitHub cron is UTC only, so both candidate hours are listed
+    # (20:00 UTC in winter, 19:00 UTC in summer) and the first step lets only the 22:00 Kyiv one through.
+    - cron: '0 19 * * *'
+    - cron: '0 20 * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,22 +15,33 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Only at 22:00 Kyiv
+        id: when
+        run: |
+          h=$(TZ=Europe/Kyiv date +%H)
+          echo "Kyiv hour: $h"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$h" != "22" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.when.outputs.skip != '1'
+        uses: actions/checkout@v5
+      - if: steps.when.outputs.skip != '1'
+        uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Followers
+        if: steps.when.outputs.skip != '1'
         run: node tools/ig_followers.mjs
         env:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
       - name: Videos
+        if: steps.when.outputs.skip != '1'
         continue-on-error: true
         run: node tools/ig_media.mjs
         env:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
       - name: Commit
+        if: steps.when.outputs.skip != '1'
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
